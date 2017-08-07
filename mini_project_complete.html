@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"></meta>
+    <title>Todo</title>
+    <style>
+          .wrapper{
+            white-space: pre;
+            width: 400px;
+            height: auto;
+            border-radius: 10px;
+            border: 2px solid;
+            padding: 10px 10px 10px 10px;
+            margin-left: 300px;
+            margin-top: 50px;
+            text-align: center;
+
+          }
+          .inputval{
+
+          }
+           input{
+             width:150px;
+             height: 15px;
+             margin-top: 5px;
+             margin-bottom: 5px;
+           }
+           button{
+             width:auto;
+             height: 25px;
+             margin-top: 5px;
+             margin-bottom: 5px;
+           }
+
+          table{
+            color:blue;
+            width: auto;
+            height: auto;
+            border-radius: 10px;
+            border: 2px solid;
+            padding: 1px 1px 1px 1px;
+          }
+
+          tr{
+            height: auto;
+            width: 150px;
+
+            border-color: red;
+
+            border-radius: 10px;
+            border: 2px solid;
+            padding: 1px 1px 1px 1px;
+
+          }
+
+    </style>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js">
+    </script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jStorage/0.4.12/jstorage.min.js">
+    </script>
+  </head>
+  <body>
+    <div class="wrapper">
+      <form>
+      Enter Name: <input id="todoValue" type="text" value="" class="inputval" ></input>
+      Enter phone: <input id="name" type="text" value="" class="inputval" ></input>
+        <button id="addButton">Add</button>
+
+        <!-- Here we will have the table -->
+
+        <table id="data">
+
+        </table>
+
+      </form>
+    </div>
+  </body>
+  <script>
+   //#TODO Wrap in document ready
+    var savedRecordsArray = [];
+    var inputValue = document.querySelector('#todoValue');
+    var inputValueone = document.querySelector('#name');
+    var id;
+    var arrayIndex= 0;
+
+
+
+    var initialize = function(){
+        $("#addButton").on("click",addRecord);
+        loadSavedRecords();
+    };
+
+    var addRecord = function(event){
+        //add to ui
+        var enteredValue = $("#todoValue").val();
+        var name = $("#name").val();
+
+        if ('' == enteredValue){
+
+            alert("Field is empty");
+            return;
+        }
+        if ('' ==  name){
+
+            alert("Field is empty");
+            return;
+        }
+
+        var record = { "record_id" : id , "value" : enteredValue , "name": name};
+        showRecord(record);
+
+        //add to recordSet
+        savedRecordsArray.push(record);
+
+
+
+
+
+        id++;
+        //save to database
+        save();
+        inputValue.value=" ";
+        inputValueone.value=" ";
+        inputValue.focus();
+
+        return false;
+    };
+
+    var save = function(){
+        $.jStorage.set("todolist", savedRecordsArray );
+
+        $.jStorage.set("id", id);
+        console.log("id: ",id);
+
+        alert("Your Details are added");
+    };
+
+    var loadSavedRecords = function(){
+        savedRecordsArray = $.jStorage.get("todolist") || [] ;
+        id = $.jStorage.get("id") || "1";
+        console.log("id when load call:", id);
+        for( let index=0 ; index<savedRecordsArray.length ; ++index ) {
+            showRecord( savedRecordsArray[index] );
+        }
+
+    };
+
+
+    var showRecord = function(record){
+        //this line creates a new dom element
+        var temp = $(`<tr class="row"><td class="valueee" >${record.value}</td><input id="one" type="hidden" value="${record.value}"></input><td class="nameee">${record.name}</td><input id="two" type="hidden" value="${record.name}"></input><input id="rid" type="hidden" value="${record.record_id}"></input><td><button id="edit" class="btnEdit" onClick= "return editRecord(event)">Edit</button></td><td><button id="delete" class="btnDelete">Delete</button></td></tr>`);
+        console.log("value", record.value);
+        console.log("name", record.name);
+        console.log("record_id", record.record_id);
+        $("#data").append(temp);
+        $('.row').attr('data-rowindex', id);
+        console.log("data-rowindex", id);
+
+
+    };
+
+
+    $("#data").on('click', '.btnDelete', function () {
+        var records_id =  $(event.target).closest('tr').find('#rid');
+        console.log("records_id in delete function: ", records_id);
+        $(this).closest('tr').remove();
+        savedRecordsArray.splice(records_id,1);
+        save();
+    });
+
+
+  var editRecord = function(event){
+
+        inputValue.value = $(event.target).closest('tr').find('#one').val();
+        console.log('...one: ' , inputValue.value);
+        inputValueone.value = $(event.target).closest('tr').find('#two').val();
+        console.log('...two: ' , inputValueone.value);
+        var records_id =  $(event.target).closest('tr').find('#rid').val();
+        console.log('...records_id: ' , records_id);
+
+        var savebutton = $('<button id="addSave" class = "btnSave" onClick="return update(event); return false;">Save</button>');
+
+        $("#addButton").after(savebutton);
+        $('.btnSave').attr('data-recid', records_id);
+        var rec_id =  $('.btnSave').data('recid');
+        console.log('...rec_id: ' , rec_id);
+
+        return false;
+   };
+
+   var update = function(event){
+
+        //alert("inside update function");
+
+        var records_new_id =  $('.btnSave').data('recid');
+        var saver= $('.row').data('rowindex');
+        console.log('...records_id: ' , records_new_id);
+        console.log('...saver index: ' , saver);
+        //alert(records_new_id);
+        var enteredValueEdit = $("#todoValue").val();
+        var nameEdit = $("#name").val();
+
+        var record = {  "record_id" : records_new_id, "value" : enteredValueEdit , "name": nameEdit};
+        var index;
+        console.log("...save k pehle update k andar id:",id);
+
+        for (index = 0 ; index<= id; index++)
+        {
+              if(savedRecordsArray[index].record_id==records_new_id){
+                  savedRecordsArray.splice(index,1);
+                  savedRecordsArray.splice(index,0,record);
+                  // savedRecordsArray[index].value=enteredValueEdit;
+                  // savedRecordsArray[index].name=nameEdit;
+                  console.log("dono chal gye");
+                   save();
+                   break;
+
+             }
+
+             console.log("... ye for loop me save k baad");
+
+
+        }
+        //savedRecordsArray.splice(records_new_id,1);
+
+
+        var tempone = $(`<tr><td class="valueee" >${record.value}</td><input id="one" type="hidden" value="${record.value}"></input><td class="nameee">${record.name}</td><input id="two" type="hidden" value="${record.name}"></input><input id="rid" type="hidden" value="${record.record_id}"></input><td><button id="edit" class="btnEdit" onClick= "return editRecord(event)">Edit</button></td><td><button id="delete" class="btnDelete">Delete</button></td></tr>`);
+
+        console.log("...update k baad id:",id);
+
+
+        $(saver).after(tempone);
+        //alert("changed");
+        // var rowindex=  $(records_new_id).closest('tr').find('#rid').val();
+        // console.log("...rowindex:", rowindex);
+
+        //$(rowindex).remove();
+        //showRecord(record);
+
+
+
+
+
+        //alert("changed");
+
+
+
+
+        return false;
+   };
+
+
+    //  var tempone = $(`<tr><td class="valueee" >${record.value}</td><input id="one" type="hidden" value="${record.value}"></input><td class="nameee">${record.name}</td><input id="two" type="hidden" value="${record.name}"></input><input id="rid" type="hidden" value="${record.record_id}"></input><td><button id="edit" class="btnEdit" onClick= "return editRecord(event)">Edit</button></td><td><button id="delete" class="btnDelete">Delete</button></td></tr>`);
+    //  $(records_id).after(tempone);
+    // # for loop on savedRecordsArray
+        // match recordid this with list instance
+        // if matched  replace
+
+    $(document).ready(function(){
+
+        initialize();
+    });
+
+  </script>
+</html>
